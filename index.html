@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Architect</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        /* 1. Idle Wiggle / Breathing Animation */
+        @keyframes float-idle {
+            0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0.15; }
+            33% { transform: translate(-49%, -51%) scale(1.02) rotate(2deg); opacity: 0.18; }
+            66% { transform: translate(-51%, -49%) scale(0.98) rotate(-1deg); opacity: 0.12; }
+        }
+        
+        /* 2. Intense Pulse for Live/Speaking Mode */
+        @keyframes pulse-live {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.5; filter: blur(80px); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
+        }
+
+        .idle-active { animation: float-idle 8s ease-in-out infinite; }
+        .live-active { animation: pulse-live 1.5s infinite ease-in-out; }
+        .processing-active { animation: pulse-live 3s infinite ease-in-out; background-color: rgba(20, 184, 166, 0.3); }
+
+        /* Custom Markdown Styles */
+        .prose pre { background-color: #000 !important; border: 1px solid #333; }
+        .prose code { color: #a7f3d0 !important; }
+    </style>
+</head>
+<body class="bg-[#212121] text-gray-100 h-screen flex overflow-hidden font-sans">
+
+    <aside class="w-[260px] bg-[#171717] flex flex-col p-3 transition-all duration-300 z-20 hidden md:flex border-r border-[#2f2f2f]">
+        <button onclick="createNewChat()" class="flex items-center gap-2 w-full hover:bg-[#2f2f2f] p-3 rounded-lg transition-colors border border-[#424242] text-sm text-gray-300">
+            <i class="fas fa-edit"></i> New chat
+        </button>
+        <div class="flex-1 overflow-y-auto mt-4 space-y-2" id="chat-history-list">
+            <div class="text-xs text-gray-500 px-3 font-semibold mb-2">Today</div>
+            <button class="w-full text-left truncate px-3 py-2 bg-[#2f2f2f] rounded-lg text-sm text-white transition-colors">Current Session</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 relative flex flex-col h-full bg-[#212121]">
+        
+        <div id="ai-circle" class="idle-active absolute top-1/2 left-1/2 w-[500px] h-[500px] bg-teal-600/20 rounded-full blur-[100px] pointer-events-none transition-all duration-700 z-0"></div>
+
+        <div id="chat-canvas" class="flex-1 overflow-y-auto w-full flex flex-col items-center p-4 z-10 scroll-smooth">
+            <div id="message-container" class="w-full max-w-3xl flex flex-col gap-6 pb-36 pt-8">
+                <div class="flex w-full justify-center opacity-50 text-sm mt-10">
+                    <p>AI Architect System Initialized.</p>
+                </div>
+            </div>
+            <div id="scroll-anchor"></div>
+        </div>
+
+        <div class="absolute bottom-0 w-full bg-gradient-to-t from-[#212121] via-[#212121] to-transparent pt-10 pb-6 px-4 z-20 flex justify-center">
+            <div class="w-full max-w-3xl bg-[#2f2f2f] rounded-2xl p-2 pl-4 flex items-end gap-2 border border-[#424242] shadow-2xl relative">
+                
+                <div class="mb-1 flex items-center gap-2">
+                    <select id="thinking-mode" class="bg-[#212121] text-gray-300 text-xs rounded-lg px-2 py-1 outline-none border border-[#424242] cursor-pointer hover:bg-[#3a3a3a] transition-colors">
+                        <option value="focused">⚡ Fast</option>
+                        <option value="diffuse">🧠 Deep</option>
+                    </select>
+                </div>
+
+                <textarea 
+                    id="text-input" 
+                    rows="1"
+                    placeholder="Message Chat Architect..." 
+                    class="flex-1 bg-transparent border-none outline-none py-2 text-white placeholder-gray-400 resize-none max-h-48 overflow-y-auto block"
+                    oninput="autoResize(this)"
+                    onkeydown="handleKeydown(event)"
+                ></textarea>
+
+                <div class="flex items-center gap-1 mb-1">
+                    <button id="btn-live" onclick="toggleLiveMode()" class="p-2 rounded-full text-gray-400 hover:text-teal-400 hover:bg-[#424242] transition-colors" title="Live Audio WebSocket (Pending)">
+                        <i class="fas fa-satellite-dish"></i>
+                    </button>
+                    <button id="btn-audio" onmousedown="startRecording()" onmouseup="stopRecording()" class="p-2 rounded-full text-gray-400 hover:text-white hover:bg-[#424242] transition-colors" title="Hold to Record">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button id="btn-send" onclick="sendTextMessage()" class="p-2 rounded-full bg-white text-black hover:bg-gray-200 transition-colors h-8 w-8 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="absolute bottom-2 text-[10px] text-gray-500">AI can make mistakes. Check important info.</div>
+        </div>
+    </main>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let currentChatId = Date.now().toString();
+        let isProcessing = false;
+
+        const chatCanvas = document.getElementById('message-container');
+        const textInput = document.getElementById('text-input');
+        const modeSelect = document.getElementById('thinking-mode');
+        const aiCircle = document.getElementById('ai-circle');
+        const btnSend = document.getElementById('btn-send');
+        const scrollAnchor = document.getElementById('scroll-anchor');
+
+        // Markdown Configuration
+        marked.setOptions({ breaks: true, gfm: true });
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+            if (textarea.value === '') textarea.style.height = 'auto';
+        }
+
+        function handleKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Prevent new line
+                sendTextMessage();
+            }
+        }
+
+        function scrollToBottom() {
+            scrollAnchor.scrollIntoView({ behavior: "smooth" });
+        }
+
+        function setProcessingState(state) {
+            isProcessing = state;
+            btnSend.disabled = state;
+            textInput.disabled = state;
+            
+            if (state) {
+                aiCircle.classList.remove('idle-active');
+                aiCircle.classList.add('processing-active');
+            } else {
+                aiCircle.classList.remove('processing-active');
+                aiCircle.classList.add('idle-active');
+                textInput.focus();
+            }
+        }
+
+        function appendMessage(role, content, isAudio = false) {
+            const div = document.createElement('div');
+            div.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`;
+            
+            // Format content: Markdown for assistant, raw text for user
+            let innerContent = '';
+            if (isAudio) {
+                innerContent = `<audio controls src="${content}" class="h-10 mt-2"></audio>`;
+            } else if (role === 'assistant') {
+                innerContent = `<div class="prose prose-invert max-w-none text-sm">${marked.parse(content)}</div>`;
+            } else {
+                innerContent = `<div class="whitespace-pre-wrap text-sm">${content}</div>`;
+            }
+
+            div.innerHTML = `
+                <div class="max-w-[85%] rounded-3xl px-5 py-3 ${role === 'user' ? 'bg-[#2f2f2f] text-white' : 'bg-transparent text-gray-100'}">
+                    ${role === 'assistant' ? '<div class="font-bold text-teal-400 mb-2 text-xs uppercase tracking-wider"><i class="fas fa-robot mr-2"></i>Architect</div>' : ''}
+                    ${innerContent}
+                </div>
+            `;
+            
+            // Remove previous thinking indicator if it exists
+            const thinkingIndicator = document.getElementById('thinking-indicator');
+            if (thinkingIndicator) thinkingIndicator.remove();
+
+            chatCanvas.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendThinkingIndicator() {
+            const div = document.createElement('div');
+            div.id = "thinking-indicator";
+            div.className = `flex w-full justify-start`;
+            div.innerHTML = `
+                <div class="max-w-[85%] rounded-3xl px-5 py-4 bg-transparent text-gray-400 flex items-center gap-2">
+                    <i class="fas fa-circle-notch fa-spin text-teal-500"></i> <span class="text-xs">Processing...</span>
+                </div>
+            `;
+            chatCanvas.appendChild(div);
+            scrollToBottom();
+        }
+
+        async function sendTextMessage() {
+            const text = textInput.value.trim();
+            if (!text || isProcessing) return;
+            
+            const mode = modeSelect.value;
+            appendMessage('user', text);
+            
+            textInput.value = '';
+            textInput.style.height = 'auto'; // Reset height
+            setProcessingState(true);
+            appendThinkingIndicator();
+
+            try {
+                const response = await fetch('/api/chat/text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text, mode: mode, chat_id: currentChatId })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                appendMessage('assistant', data.response);
+            } catch (error) {
+                appendMessage('assistant', `**Connection Error:** Could not reach the server. \n\`${error.message}\``);
+            } finally {
+                setProcessingState(false);
+            }
+        }
+
+        async function startRecording() {
+            if (isRecording || isProcessing) return;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = sendAudioMessage;
+                
+                mediaRecorder.start();
+                isRecording = true;
+                
+                // Visual feedback
+                const btn = document.getElementById('btn-audio');
+                btn.classList.replace('text-gray-400', 'text-red-500');
+                btn.classList.add('bg-red-500/20');
+                aiCircle.classList.add('live-active');
+            } catch (err) {
+                alert("Microphone access required for audio input.");
+            }
+        }
+
+        function stopRecording() {
+            if (isRecording && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                isRecording = false;
+                
+                // Reset visual feedback
+                const btn = document.getElementById('btn-audio');
+                btn.classList.replace('text-red-500', 'text-gray-400');
+                btn.classList.remove('bg-red-500/20');
+                aiCircle.classList.remove('live-active');
+                
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        async function sendAudioMessage() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const formData = new FormData();
+            formData.append('audio_file', audioBlob, 'recording.webm');
+            formData.append('mode', modeSelect.value);
+            formData.append('chat_id', currentChatId);
+
+            appendMessage('user', '🎤 *Voice message attached*');
+            setProcessingState(true);
+            appendThinkingIndicator();
+
+            try {
+                const response = await fetch('/api/chat/audio', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error("Audio processing failed.");
+                
+                const data = await response.json();
+                if (data.text_response) appendMessage('assistant', data.text_response);
+                if (data.audio_url) appendMessage('assistant', data.audio_url, true);
+                
+            } catch (error) {
+                appendMessage('assistant', `**Error processing audio:** \n\`${error.message}\``);
+            } finally {
+                setProcessingState(false);
+            }
+        }
+
+        function toggleLiveMode() {
+            if (isProcessing) return;
+            const btn = document.getElementById('btn-live');
+            const isActive = aiCircle.classList.contains('live-active');
+            
+            if (isActive) {
+                aiCircle.classList.replace('live-active', 'idle-active');
+                btn.classList.replace('text-teal-400', 'text-gray-400');
+            } else {
+                aiCircle.classList.replace('idle-active', 'live-active');
+                btn.classList.replace('text-gray-400', 'text-teal-400');
+            }
+        }
+
+        function createNewChat() {
+            if (isProcessing) return;
+            currentChatId = Date.now().toString();
+            chatCanvas.innerHTML = `
+                <div class="flex w-full justify-center opacity-50 text-sm mt-10">
+                    <p>New Session Initiated.</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
