@@ -97,6 +97,9 @@
     </main>
 
     <script>
+        // FIX: Define backend URL resolving CORS issues outside GH pages ecosystem.
+        const API_BASE = "http://localhost:7860"; 
+
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
@@ -121,7 +124,7 @@
 
         function handleKeydown(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Prevent new line
+                e.preventDefault(); 
                 sendTextMessage();
             }
         }
@@ -149,7 +152,6 @@
             const div = document.createElement('div');
             div.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`;
             
-            // Format content: Markdown for assistant, raw text for user
             let innerContent = '';
             if (isAudio) {
                 innerContent = `<audio controls src="${content}" class="h-10 mt-2"></audio>`;
@@ -166,7 +168,6 @@
                 </div>
             `;
             
-            // Remove previous thinking indicator if it exists
             const thinkingIndicator = document.getElementById('thinking-indicator');
             if (thinkingIndicator) thinkingIndicator.remove();
 
@@ -195,12 +196,13 @@
             appendMessage('user', text);
             
             textInput.value = '';
-            textInput.style.height = 'auto'; // Reset height
+            textInput.style.height = 'auto'; 
             setProcessingState(true);
             appendThinkingIndicator();
 
             try {
-                const response = await fetch('/api/chat/text', {
+                // FIX: Prepended API_BASE
+                const response = await fetch(`${API_BASE}/api/chat/text`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: text, mode: mode, chat_id: currentChatId })
@@ -230,7 +232,6 @@
                 mediaRecorder.start();
                 isRecording = true;
                 
-                // Visual feedback
                 const btn = document.getElementById('btn-audio');
                 btn.classList.replace('text-gray-400', 'text-red-500');
                 btn.classList.add('bg-red-500/20');
@@ -245,7 +246,6 @@
                 mediaRecorder.stop();
                 isRecording = false;
                 
-                // Reset visual feedback
                 const btn = document.getElementById('btn-audio');
                 btn.classList.replace('text-red-500', 'text-gray-400');
                 btn.classList.remove('bg-red-500/20');
@@ -267,12 +267,18 @@
             appendThinkingIndicator();
 
             try {
-                const response = await fetch('/api/chat/audio', { method: 'POST', body: formData });
+                // FIX: Prepended API_BASE
+                const response = await fetch(`${API_BASE}/api/chat/audio`, { method: 'POST', body: formData });
                 if (!response.ok) throw new Error("Audio processing failed.");
                 
                 const data = await response.json();
                 if (data.text_response) appendMessage('assistant', data.text_response);
-                if (data.audio_url) appendMessage('assistant', data.audio_url, true);
+                
+                // FIX: Construct correct URL path relative to backend domain
+                if (data.audio_url) {
+                    const fullUrl = data.audio_url.startsWith('http') ? data.audio_url : `${API_BASE}${data.audio_url}`;
+                    appendMessage('assistant', fullUrl, true);
+                }
                 
             } catch (error) {
                 appendMessage('assistant', `**Error processing audio:** \n\`${error.message}\``);
