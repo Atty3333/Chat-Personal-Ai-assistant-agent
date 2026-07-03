@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat Architect</title>
+    <title>Tach Agent</title>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -49,7 +49,7 @@
         </button>
         <div class="flex-1 overflow-y-auto mt-6 space-y-2" id="chat-history-list">
             <div class="text-xs text-gray-500 px-3 font-semibold mb-2 uppercase tracking-wider">Today</div>
-            <button class="w-full text-left truncate px-3 py-2 bg-[#2f2f2f] rounded-lg text-sm text-white transition-colors font-medium border border-[#3f3f3f]">Current Architectural Session</button>
+            <button class="w-full text-left truncate px-3 py-2 bg-[#2f2f2f] rounded-lg text-sm text-white transition-colors font-medium border border-[#3f3f3f]">Current  Session</button>
         </div>
     </aside>
 
@@ -88,7 +88,7 @@
                     <textarea 
                         id="text-input" 
                         rows="1"
-                        placeholder="Message Architect..." 
+                        placeholder="Message Agent..." 
                         class="flex-1 bg-transparent border-none outline-none py-2 px-1 text-white placeholder-gray-500 resize-none max-h-32 sm:max-h-48 overflow-y-auto block text-base w-full"
                         oninput="autoResize(this)"
                         onkeydown="handleKeydown(event)"
