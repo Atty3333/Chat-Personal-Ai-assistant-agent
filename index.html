@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chat Architect</title>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -12,14 +12,14 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        
+
         /* Orb Animations */
         @keyframes float-idle {
             0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0.15; }
             33% { transform: translate(-49%, -51%) scale(1.02) rotate(2deg); opacity: 0.18; }
             66% { transform: translate(-51%, -49%) scale(0.98) rotate(-1deg); opacity: 0.12; }
         }
-        
+
         @keyframes pulse-live {
             0% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
             50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.5; filter: blur(80px); }
@@ -31,20 +31,20 @@
         .processing-active { animation: pulse-live 3s infinite ease-in-out; background-color: rgba(20, 184, 166, 0.3) !important; }
 
         /* Prose Markdown Overrides */
-        .prose pre { background-color: #0f172a !important; border: 1px solid #334155; border-radius: 0.5rem; }
-        .prose code { color: #5eead4 !important; background: rgba(15, 23, 42, 0.5); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.85em; }
+        .prose pre { background-color: #0f172a !important; border: 1px solid #334155; border-radius: 0.5rem; overflow-x: auto; max-width: 100%; }
+        .prose code { color: #5eead4 !important; background: rgba(15, 23, 42, 0.5); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.85em; word-break: break-word; }
         .prose pre code { background: transparent; padding: 0; color: #e2e8f0 !important; }
         .prose p:last-child { margin-bottom: 0; }
     </style>
 </head>
-<body class="bg-[#1e1e1e] text-gray-100 h-screen flex overflow-hidden font-sans antialiased selection:bg-teal-500/30">
+<body class="bg-[#1e1e1e] text-gray-100 h-[100dvh] flex overflow-hidden font-sans antialiased selection:bg-teal-500/30">
 
-    <aside id="sidebar" class="w-[260px] bg-[#141414] flex-col p-3 transition-transform duration-300 z-30 fixed md:relative h-full border-r border-[#2f2f2f] -translate-x-full md:translate-x-0 flex">
+    <aside id="sidebar" class="w-[260px] max-w-[80vw] bg-[#141414] flex-col p-3 transition-transform duration-300 z-30 fixed md:relative h-full border-r border-[#2f2f2f] -translate-x-full md:translate-x-0 flex">
         <div class="flex justify-between items-center mb-4 md:hidden">
             <span class="font-bold text-sm text-slate-300">Menu</span>
             <button onclick="toggleSidebar()" class="p-2 text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
         </div>
-        <button onclick="createNewChat()" class="flex items-center gap-2 w-full hover:bg-[#2f2f2f] p-3 rounded-lg transition-colors border border-[#424242] text-sm text-gray-300 font-medium">
+        <button onclick="createNewChat()" class="flex items-center gap-2 w-full hover:bg-[#2f2f2f] p-3 rounded-lg transition-colors border border-[#424242] text-sm text-gray-300 font-medium shrink-0">
             <i class="fas fa-plus text-teal-500"></i> New Session
         </button>
         <div class="flex-1 overflow-y-auto mt-6 space-y-2" id="chat-history-list">
@@ -55,29 +55,30 @@
 
     <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden transition-opacity opacity-0"></div>
 
-    <main class="flex-1 relative flex flex-col h-full bg-[#1e1e1e] w-full">
-        
-        <header class="md:hidden flex items-center justify-between p-4 border-b border-[#2f2f2f] bg-[#1e1e1e] z-10">
+    <main class="flex-1 relative flex flex-col h-full bg-[#1e1e1e] w-full min-w-0">
+
+        <header class="md:hidden flex items-center justify-between p-4 border-b border-[#2f2f2f] bg-[#1e1e1e] z-10 shrink-0">
             <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white"><i class="fas fa-bars text-lg"></i></button>
             <span class="font-semibold text-sm">Chat Architect</span>
-            <div class="w-6"></div> </header>
+            <div class="w-6"></div> 
+        </header>
 
         <div id="ai-circle" class="idle-active absolute top-1/2 left-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-teal-600/20 rounded-full blur-[80px] pointer-events-none transition-all duration-700 z-0"></div>
 
         <div id="chat-canvas" class="flex-1 overflow-y-auto w-full flex flex-col items-center p-4 z-10 scroll-smooth">
-            <div id="message-container" class="w-full max-w-3xl flex flex-col gap-6 pb-40 pt-4 md:pt-8">
+            <div id="message-container" class="w-full max-w-3xl flex flex-col gap-6 pb-40 md:pb-48 pt-4 md:pt-8">
                 <div class="flex w-full justify-center opacity-50 text-sm my-10">
-                    <p class="bg-black/20 px-4 py-1.5 rounded-full border border-white/5">AI Architect System Initialized.</p>
+                    <p class="bg-black/20 px-4 py-1.5 rounded-full border border-white/5 text-center">AI Architect System Initialized.</p>
                 </div>
             </div>
             <div id="scroll-anchor"></div>
         </div>
 
-        <div class="absolute bottom-0 w-full bg-gradient-to-t from-[#1e1e1e] via-[#1e1e1e] to-transparent pt-12 pb-6 px-4 z-20 flex justify-center">
-            <div class="w-full max-w-3xl bg-[#2a2a2a] rounded-2xl p-2 pl-4 flex flex-col border border-[#3f3f3f] shadow-2xl relative transition-all focus-within:border-[#5a5a5a]">
-                
-                <div class="flex items-end gap-2">
-                    <div class="mb-1 flex items-center gap-2 shrink-0">
+        <div class="absolute bottom-0 w-full bg-gradient-to-t from-[#1e1e1e] via-[#1e1e1e] to-transparent pt-12 pb-4 sm:pb-6 px-3 sm:px-4 z-20 flex justify-center pb-safe">
+            <div class="w-full max-w-3xl bg-[#2a2a2a] rounded-2xl p-2 pl-3 sm:pl-4 flex flex-col border border-[#3f3f3f] shadow-2xl relative transition-all focus-within:border-[#5a5a5a]">
+
+                <div class="flex items-end gap-1 sm:gap-2 w-full">
+                    <div class="mb-1 flex items-center gap-2 shrink-0 hidden sm:flex">
                         <select id="thinking-mode" class="bg-[#1e1e1e] text-gray-300 text-xs rounded-lg px-2.5 py-1.5 outline-none border border-[#3f3f3f] cursor-pointer hover:bg-[#333] transition-colors appearance-none">
                             <option value="focused">⚡ Fast</option>
                             <option value="diffuse">🧠 Deep</option>
@@ -87,8 +88,8 @@
                     <textarea 
                         id="text-input" 
                         rows="1"
-                        placeholder="Message Chat Architect..." 
-                        class="flex-1 bg-transparent border-none outline-none py-2 text-white placeholder-gray-500 resize-none max-h-48 overflow-y-auto block text-sm md:text-base"
+                        placeholder="Message Architect..." 
+                        class="flex-1 bg-transparent border-none outline-none py-2 px-1 text-white placeholder-gray-500 resize-none max-h-32 sm:max-h-48 overflow-y-auto block text-base w-full"
                         oninput="autoResize(this)"
                         onkeydown="handleKeydown(event)"
                     ></textarea>
@@ -106,7 +107,7 @@
                     </div>
                 </div>
             </div>
-            <div class="absolute bottom-1 text-[10px] text-gray-500 font-medium">Architecture specs generated by AI may require verification.</div>
+            <div class="absolute bottom-0.5 text-[9px] sm:text-[10px] text-gray-500 font-medium text-center w-full pb-1">Architecture specs generated by AI may require verification.</div>
         </div>
     </main>
 
@@ -128,7 +129,6 @@
         const sidebar = document.getElementById('sidebar');
         const mobileOverlay = document.getElementById('mobile-overlay');
 
-        // Markdown Configuration: Secure output formatting
         marked.setOptions({ breaks: true, gfm: true });
 
         function toggleSidebar() {
@@ -148,16 +148,20 @@
             textarea.style.height = 'auto';
             textarea.style.height = (textarea.scrollHeight) + 'px';
             if (textarea.value === '') textarea.style.height = 'auto';
-            
-            // Toggle send button state visually
+
             if (textarea.value.trim() !== '') {
                 btnSend.classList.replace('bg-gray-600', 'bg-teal-500');
                 btnSend.classList.replace('text-gray-400', 'text-slate-900');
+            } else {
+                btnSend.classList.replace('bg-teal-500', 'bg-gray-600');
+                btnSend.classList.replace('text-slate-900', 'text-gray-400');
             }
         }
 
         function handleKeydown(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            // Prevent Enter from firing on mobile virtual keyboards if it's acting as a next line
+            // but standard browsers treat Shift+Enter as new line
+            if (e.key === 'Enter' && !e.shiftKey && !window.matchMedia("(max-width: 768px)").matches) {
                 e.preventDefault(); 
                 sendTextMessage();
             }
@@ -171,14 +175,14 @@
             isProcessing = state;
             btnSend.disabled = state;
             textInput.disabled = state;
-            
+
             if (state) {
                 aiCircle.classList.remove('idle-active', 'live-active');
                 aiCircle.classList.add('processing-active');
             } else {
                 aiCircle.classList.remove('processing-active', 'live-active');
                 aiCircle.classList.add('idle-active');
-                textInput.focus();
+                if (window.innerWidth >= 768) textInput.focus(); // Prevent keyboard pop-up on mobile
             }
         }
 
@@ -188,26 +192,27 @@
             }[tag]));
         }
 
+        // Updated for better mobile padding and widths
         function appendMessage(role, content, isAudio = false) {
             const div = document.createElement('div');
             div.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`;
-            
+
             let innerContent = '';
             if (isAudio) {
-                innerContent = `<audio controls src="${content}" class="h-10 mt-2 outline-none rounded-full"></audio>`;
+                innerContent = `<audio controls src="${content}" class="h-10 mt-2 outline-none rounded-full max-w-full"></audio>`;
             } else if (role === 'assistant') {
-                innerContent = `<div class="prose prose-invert max-w-none text-sm md:text-base leading-relaxed">${marked.parse(content)}</div>`;
+                innerContent = `<div class="prose prose-invert max-w-none text-sm md:text-base leading-relaxed overflow-hidden">${marked.parse(content)}</div>`;
             } else {
-                innerContent = `<div class="whitespace-pre-wrap text-sm md:text-base leading-relaxed">${escapeHTML(content)}</div>`;
+                innerContent = `<div class="whitespace-pre-wrap text-sm md:text-base leading-relaxed break-words">${escapeHTML(content)}</div>`;
             }
 
             div.innerHTML = `
-                <div class="max-w-[90%] md:max-w-[85%] rounded-3xl px-5 py-3.5 ${role === 'user' ? 'bg-[#323232] text-white border border-[#404040]' : 'bg-transparent text-gray-200'}">
+                <div class="max-w-[95%] md:max-w-[85%] rounded-3xl px-4 py-3 md:px-5 md:py-3.5 overflow-hidden ${role === 'user' ? 'bg-[#323232] text-white border border-[#404040]' : 'bg-transparent text-gray-200'}">
                     ${role === 'assistant' ? '<div class="font-bold text-teal-400 mb-2 text-xs uppercase tracking-widest flex items-center"><i class="fas fa-layer-group mr-2"></i>Architect</div>' : ''}
                     ${innerContent}
                 </div>
             `;
-            
+
             const thinkingIndicator = document.getElementById('thinking-indicator');
             if (thinkingIndicator) thinkingIndicator.remove();
 
@@ -220,8 +225,8 @@
             div.id = "thinking-indicator";
             div.className = `flex w-full justify-start`;
             div.innerHTML = `
-                <div class="max-w-[85%] rounded-3xl px-5 py-4 bg-transparent text-gray-500 flex items-center gap-3">
-                    <i class="fas fa-circle-notch fa-spin text-teal-500 text-lg"></i> <span class="text-sm font-medium tracking-wide">Compiling response...</span>
+                <div class="max-w-[85%] rounded-3xl px-4 py-3 md:px-5 md:py-4 bg-transparent text-gray-500 flex items-center gap-3">
+                    <i class="fas fa-circle-notch fa-spin text-teal-500 text-base md:text-lg"></i> <span class="text-sm font-medium tracking-wide">Compiling...</span>
                 </div>
             `;
             chatCanvas.appendChild(div);
@@ -231,10 +236,11 @@
         async function sendTextMessage() {
             const text = textInput.value.trim();
             if (!text || isProcessing) return;
-            
-            const mode = modeSelect.value;
+
+            // Optional chaining fallback in case modeSelect is hidden on tiny mobile view
+            const mode = modeSelect ? modeSelect.value : 'focused';
             appendMessage('user', text);
-            
+
             textInput.value = '';
             textInput.style.height = 'auto'; 
             setProcessingState(true);
@@ -246,9 +252,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: text, mode: mode, chat_id: currentChatId })
                 });
-                
+
                 if (!response.ok) throw new Error(`HTTP ${response.status}: Architecture API unreachable.`);
-                
+
                 const data = await response.json();
                 appendMessage('assistant', data.response);
             } catch (error) {
@@ -264,17 +270,17 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
-                
+
                 mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
                 mediaRecorder.onstop = sendAudioMessage;
-                
+
                 mediaRecorder.start();
                 isRecording = true;
-                
+
                 const btn = document.getElementById('btn-audio');
                 btn.classList.replace('text-gray-500', 'text-red-500');
                 btn.classList.add('bg-red-500/20');
-                
+
                 aiCircle.classList.remove('idle-active');
                 aiCircle.classList.add('live-active');
             } catch (err) {
@@ -283,17 +289,17 @@
         }
 
         function stopRecording() {
-            if (isRecording && mediaRecorder.state !== 'inactive') {
+            if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
                 isRecording = false;
-                
+
                 const btn = document.getElementById('btn-audio');
                 btn.classList.replace('text-red-500', 'text-gray-500');
                 btn.classList.remove('bg-red-500/20');
-                
+
                 aiCircle.classList.remove('live-active');
                 aiCircle.classList.add('idle-active');
-                
+
                 mediaRecorder.stream.getTracks().forEach(track => track.stop());
             }
         }
@@ -302,7 +308,7 @@
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
             const formData = new FormData();
             formData.append('audio_file', audioBlob, 'recording.webm');
-            formData.append('mode', modeSelect.value);
+            formData.append('mode', modeSelect ? modeSelect.value : 'focused');
             formData.append('chat_id', currentChatId);
 
             appendMessage('user', '🎤 *Voice telemetry recorded*');
@@ -312,10 +318,10 @@
             try {
                 const response = await fetch(`${API_BASE}/api/chat/audio`, { method: 'POST', body: formData });
                 if (!response.ok) throw new Error("Audio stream compilation failed.");
-                
+
                 const data = await response.json();
                 if (data.text_response) appendMessage('assistant', data.text_response);
-                
+
                 if (data.audio_url) {
                     const fullUrl = data.audio_url.startsWith('http') ? data.audio_url : `${API_BASE}${data.audio_url}`;
                     appendMessage('assistant', fullUrl, true);
@@ -331,7 +337,7 @@
             if (isProcessing) return;
             const btn = document.getElementById('btn-live');
             const isActive = aiCircle.classList.contains('live-active');
-            
+
             if (isActive) {
                 aiCircle.classList.replace('live-active', 'idle-active');
                 btn.classList.replace('text-teal-400', 'text-gray-500');
@@ -351,7 +357,7 @@
                     <p class="bg-black/20 px-4 py-1.5 rounded-full border border-white/5">Session UUID Reallocated.</p>
                 </div>
             `;
-            if (window.innerWidth < 768) toggleSidebar(); // auto-close on mobile
+            if (window.innerWidth < 768) toggleSidebar(); 
         }
     </script>
 </body>
