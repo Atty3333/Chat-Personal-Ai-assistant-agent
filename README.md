@@ -1,6 +1,6 @@
 # Tach Agent — browser chat client
 
-This repository contains a single-page web client for a remote assistant API. Despite the repository name, the code here is a browser application, which comunicates with the CHAT Ai Agent ,allowing you to talk and interact with the CHAT Ai agent.
+A single-page browser client that communicates with a remote assistant API for text chat and microphone audio. This repository contains the web interface; the API service and model are hosted separately and are not included.
 
 ## Features in the client
 
