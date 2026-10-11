@@ -1,19 +1,28 @@
-# Personal AI Coding Assistant Agent (Android)
+# Tach Agent — browser chat client
 
-A standalone Android mobile application designed to act as an intelligent, pocket-sized AI coding assistant agent. Built natively for Android, this application provides developers with quick access to AI-driven coding help, snippet generation, and debugging assistance on the go.
+This repository contains a single-page web client for a remote assistant API. Despite the repository name, the code here is a browser application, not an Android project; the API server and model are not included.
 
-## 🚀 Features
-* **Standalone Android Agent:** Optimized specifically for mobile workflows rather than web interfaces.
-* **AI Coding Assistance:** Generate, explain, and refactor code snippets directly from your phone.
-* **Clean UI/UX:** Built with modern Android XML layouts and Material Design principles.
-* **Interactive Chat Interface:** Seamless conversational flow tailored for technical queries.
+## Features in the client
 
-## 🛠️ Tech Stack
-* **Language:** Kotlin, Java
-* **UI Layouts:** XML, Material Components
-* **IDE:** Android Studio
+- Send text prompts in **Fast** or **Deep** mode and display the returned response as Markdown.
+- Record microphone audio in the browser and send it to the audio endpoint; display returned text and play audio when the response includes an audio URL.
+- Start a new client session, with a newly generated chat ID, and use the responsive sidebar on narrow screens.
 
-## ⚙️ Getting Started
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/Atty3333/Chat-Personal-Ai-assistant-agent.git](https://github.com/Atty3333/Chat-Personal-Ai-assistant-agent.git)
+The current frontend points to `https://manxaneletso-chat-dev-space.hf.space`. Its text and audio requests use `/api/chat/text` and `/api/chat/audio`. The server is external to this repository, so its availability and behavior are not guaranteed by this codebase.
+
+## Run locally
+
+The page has no build step. It loads Tailwind CSS, Marked, and Font Awesome from CDNs, so an internet connection is needed for those assets and the remote API.
+
+```bash
+git clone https://github.com/Atty3333/Chat-Personal-Ai-assistant-agent.git
+cd Chat-Personal-Ai-assistant-agent
+python3 -m http.server 8000
+```
+
+Open `http://localhost:8000`. Microphone recording requires browser permission and a secure context such as localhost or HTTPS. To use a different API, update `API_BASE` in the inline script in `index.html` and provide the expected endpoints and response fields (`response`, and optionally `text_response` and `audio_url`).
+
+## Current limitations
+
+- The repository contains no backend source, model configuration, Android code, or chat-history retrieval. The browser keeps the visible transcript in the current page; starting a new session clears it and rotates the client chat ID.
+- The button titled “Live Audio WebSocket (Pending)” currently changes the interface animation only; the code does not open a WebSocket connection.
